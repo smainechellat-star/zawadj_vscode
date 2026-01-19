@@ -1,0 +1,469 @@
+import 'package:flutter/material.dart';
+import '../l10n/arabic_strings.dart';
+import '../l10n/english_strings.dart';
+import '../widgets/common_widgets.dart';
+import '../models/enums.dart';
+import '../utils/constants.dart';
+
+class PartnerCriteriaScreen extends StatefulWidget {
+  const PartnerCriteriaScreen({super.key});
+
+  @override
+  State<PartnerCriteriaScreen> createState() => _PartnerCriteriaScreenState();
+}
+
+class _PartnerCriteriaScreenState extends State<PartnerCriteriaScreen> {
+  late String language;
+
+  // المعايير المختارة
+  List<int> selectedAgeRange = [18, 35];
+  List<String> selectedCountries = [];
+  List<String> selectedStates = [];
+  List<MaritalStatus> selectedMaritalStatuses = [];
+  List<EducationLevel> selectedEducationLevels = [];
+  List<SkinColor> selectedSkinColors = [];
+  List<BodyType> selectedBodyTypes = [];
+  ChildrenPreference? selectedChildrenPreference;
+  HabitStatus? selectedAlcoholDrugs;
+  HabitStatus? selectedSmoking;
+  PrayerStatus? selectedPrayerStatus;
+  GlassesPreference? selectedGlassesPreference;
+  List<int> selectedHeightRange = [150, 180];
+  AppearanceFilter? selectedAppearance;
+  Gender? userGender;
+
+  @override
+  void initState() {
+    super.initState();
+    language = 'ar';
+    // يمكن الحصول على جنس المستخدم من الـ Provider أو من الملف الشخصي المحفوظ
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = language == 'ar';
+
+    return Scaffold(
+      appBar: CustomAppBar(
+        title: isArabic ? ArabicStrings.partnerCriteria : EnglishStrings.partnerCriteria,
+        onBackPressed: () => Navigator.pop(context),
+        showForwardButton: true,
+        onForwardPressed: () {
+          Navigator.pushNamed(context, '/terms');
+        },
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          _buildSectionHeader(isArabic ? 'معايير البحث الأساسية' : 'Basic Search Criteria'),
+          const SizedBox(height: 15),
+
+          // Age Range
+          Text(
+            isArabic ? ArabicStrings.preferredAge : EnglishStrings.preferredAge,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: CustomDropdown<int>(
+                    label: isArabic ? 'من' : 'From',
+                    value: selectedAgeRange[0],
+                    items: AppConstants.ageRange,
+                    itemLabel: (age) => age.toString(),
+                    onChanged: (value) {
+                      if (value != null && value <= selectedAgeRange[1]) {
+                        setState(() => selectedAgeRange[0] = value);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: CustomDropdown<int>(
+                    label: isArabic ? 'إلى' : 'To',
+                    value: selectedAgeRange[1],
+                    items: AppConstants.ageRange,
+                    itemLabel: (age) => age.toString(),
+                    onChanged: (value) {
+                      if (value != null && value >= selectedAgeRange[0]) {
+                        setState(() => selectedAgeRange[1] = value);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // الدولة - Multi-select Checkbox
+          _buildMultiSelectDropdown(
+            label: isArabic ? 'الدولة' : 'Country',
+            items: AppConstants.countries,
+            selectedItems: selectedCountries,
+            itemLabel: (country) => country,
+            onChanged: (selected) {
+              setState(() => selectedCountries = selected);
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // الولاية - Multi-select Checkbox (ولايات الجزائر)
+          _buildMultiSelectDropdown(
+            label: isArabic ? 'الولاية (الجزائر)' : 'State (Algeria)',
+            items: AppConstants.algerianCities,
+            selectedItems: selectedStates,
+            itemLabel: (state) => state,
+            onChanged: (selected) {
+              setState(() => selectedStates = selected);
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // Marital Status Multi-select (مع إخفاء المتزوج للذكر)
+          _buildMultiSelectDropdown(
+            label: isArabic ? ArabicStrings.preferredMaritalStatus : EnglishStrings.preferredMaritalStatus,
+            items: _getMaritalStatusOptions(),
+            selectedItems: selectedMaritalStatuses,
+            itemLabel: (status) {
+              switch (status) {
+                case MaritalStatus.single:
+                  return isArabic ? ArabicStrings.single : EnglishStrings.single;
+                case MaritalStatus.married:
+                  return isArabic ? ArabicStrings.married_ : EnglishStrings.married_;
+                case MaritalStatus.divorced:
+                  return isArabic ? ArabicStrings.divorced : EnglishStrings.divorced;
+                case MaritalStatus.widowed:
+                  return isArabic ? ArabicStrings.widowed : EnglishStrings.widowed;
+              }
+            },
+            onChanged: (selected) {
+              setState(() => selectedMaritalStatuses = selected);
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // المستوى التعليمي - Multi-select Checkbox
+          _buildMultiSelectDropdown(
+            label: isArabic ? ArabicStrings.preferredEducation : EnglishStrings.preferredEducation,
+            items: EducationLevel.values,
+            selectedItems: selectedEducationLevels,
+            itemLabel: (level) {
+              switch (level) {
+                case EducationLevel.primary:
+                  return isArabic ? ArabicStrings.primary : EnglishStrings.primary;
+                case EducationLevel.middle:
+                  return isArabic ? ArabicStrings.middle : EnglishStrings.middle;
+                case EducationLevel.secondary:
+                  return isArabic ? ArabicStrings.secondary : EnglishStrings.secondary;
+                case EducationLevel.university:
+                  return isArabic ? ArabicStrings.university : EnglishStrings.university;
+              }
+            },
+            onChanged: (selected) {
+              setState(() => selectedEducationLevels = selected);
+            },
+          ),
+          const SizedBox(height: 30),
+
+          // قسم المعايير الإضافية
+          _buildSectionHeader(isArabic ? 'المعايير الإضافية' : 'Additional Criteria'),
+          const SizedBox(height: 15),
+
+          // الرغبة في الإنجاب
+          CustomDropdown<ChildrenPreference>(
+            label: isArabic ? 'الرغبة في الإنجاب' : 'Desire for Children',
+            value: selectedChildrenPreference,
+            items: ChildrenPreference.values,
+            itemLabel: (pref) {
+              switch (pref) {
+                case ChildrenPreference.yes:
+                  return isArabic ? 'نعم' : 'Yes';
+                case ChildrenPreference.no:
+                  return isArabic ? 'لا' : 'No';
+                case ChildrenPreference.doesntMatter:
+                  return isArabic ? 'لا يهم' : "Doesn't Matter";
+              }
+            },
+            onChanged: (value) {
+              setState(() => selectedChildrenPreference = value);
+            },
+          ),
+          const SizedBox(height: 15),
+
+          // الخمر والمخدرات
+          CustomDropdown<HabitStatus>(
+            label: isArabic ? 'الخمر والمخدرات' : 'Alcohol & Drugs',
+            value: selectedAlcoholDrugs,
+            items: HabitStatus.values,
+            itemLabel: (status) {
+              switch (status) {
+                case HabitStatus.yes:
+                  return isArabic ? 'نعم' : 'Yes';
+                case HabitStatus.no:
+                  return isArabic ? 'لا' : 'No';
+                case HabitStatus.noMatter:
+                  return isArabic ? 'لا يهم' : "Doesn't Matter";
+              }
+            },
+            onChanged: (value) {
+              setState(() => selectedAlcoholDrugs = value);
+            },
+          ),
+          const SizedBox(height: 15),
+
+          // التدخين
+          CustomDropdown<HabitStatus>(
+            label: isArabic ? ArabicStrings.smoking : EnglishStrings.smoking,
+            value: selectedSmoking,
+            items: HabitStatus.values,
+            itemLabel: (status) {
+              switch (status) {
+                case HabitStatus.yes:
+                  return isArabic ? 'نعم' : 'Yes';
+                case HabitStatus.no:
+                  return isArabic ? 'لا' : 'No';
+                case HabitStatus.noMatter:
+                  return isArabic ? 'لا يهم' : "Doesn't Matter";
+              }
+            },
+            onChanged: (value) {
+              setState(() => selectedSmoking = value);
+            },
+          ),
+          const SizedBox(height: 15),
+
+          // الصلاة
+          CustomDropdown<PrayerStatus>(
+            label: isArabic ? ArabicStrings.prayer : EnglishStrings.prayer,
+            value: selectedPrayerStatus,
+            items: PrayerStatus.values,
+            itemLabel: (status) {
+              switch (status) {
+                case PrayerStatus.regular:
+                  return isArabic ? ArabicStrings.regular : EnglishStrings.regular;
+                case PrayerStatus.irregular:
+                  return isArabic ? ArabicStrings.irregular : EnglishStrings.irregular;
+                case PrayerStatus.doesntMatter:
+                  return isArabic ? ArabicStrings.doesntMatter : EnglishStrings.doesntMatter;
+              }
+            },
+            onChanged: (value) {
+              setState(() => selectedPrayerStatus = value);
+            },
+          ),
+          const SizedBox(height: 30),
+
+          // قسم المظهر الخارجي
+          _buildSectionHeader(isArabic ? 'المظهر الخارجي' : 'Physical Appearance'),
+          const SizedBox(height: 15),
+
+          // أهمية المظهر الخارجي
+          CustomDropdown<AppearanceFilter>(
+            label: isArabic ? 'أهمية المظهر الخارجي' : 'Appearance Importance',
+            value: selectedAppearance,
+            items: AppearanceFilter.values,
+            itemLabel: (filter) {
+              switch (filter) {
+                case AppearanceFilter.veryImportant:
+                  return isArabic ? 'مهم جداً' : 'Very Important';
+                case AppearanceFilter.important:
+                  return isArabic ? 'مهم' : 'Important';
+                case AppearanceFilter.doesntMatter:
+                  return isArabic ? 'لا يهم' : "Doesn't Matter";
+              }
+            },
+            onChanged: (value) {
+              setState(() => selectedAppearance = value);
+            },
+          ),
+          const SizedBox(height: 15),
+
+          // لبس النظارات
+          CustomDropdown<GlassesPreference>(
+            label: isArabic ? 'لبس النظارات' : 'Wears Glasses',
+            value: selectedGlassesPreference,
+            items: GlassesPreference.values,
+            itemLabel: (pref) {
+              switch (pref) {
+                case GlassesPreference.yes:
+                  return isArabic ? 'نعم' : 'Yes';
+                case GlassesPreference.no:
+                  return isArabic ? 'لا' : 'No';
+                case GlassesPreference.doesntMatter:
+                  return isArabic ? 'لا يهم' : "Doesn't Matter";
+              }
+            },
+            onChanged: (value) {
+              setState(() => selectedGlassesPreference = value);
+            },
+          ),
+          const SizedBox(height: 15),
+
+          // الطول بالسنتمترات
+          Text(
+            isArabic ? 'الطول بالسنتمترات (100-200)' : 'Height in cm (100-200)',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: CustomDropdown<int>(
+                    label: isArabic ? 'من' : 'From',
+                    value: selectedHeightRange[0],
+                    items: AppConstants.heightRange,
+                    itemLabel: (height) => height.toString(),
+                    onChanged: (value) {
+                      if (value != null && value <= selectedHeightRange[1]) {
+                        setState(() => selectedHeightRange[0] = value);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: CustomDropdown<int>(
+                    label: isArabic ? 'إلى' : 'To',
+                    value: selectedHeightRange[1],
+                    items: AppConstants.heightRange,
+                    itemLabel: (height) => height.toString(),
+                    onChanged: (value) {
+                      if (value != null && value >= selectedHeightRange[0]) {
+                        setState(() => selectedHeightRange[1] = value);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // لون البشرة - Multi-select Checkbox
+          _buildMultiSelectDropdown(
+            label: isArabic ? 'لون البشرة' : 'Skin Color',
+            items: SkinColor.values.where((c) => c != SkinColor.noPreference).toList(),
+            selectedItems: selectedSkinColors,
+            itemLabel: (color) {
+              switch (color) {
+                case SkinColor.fair:
+                  return isArabic ? 'فاتح' : 'Fair';
+                case SkinColor.wheatish:
+                  return isArabic ? 'قمحي' : 'Wheatish';
+                case SkinColor.brown:
+                  return isArabic ? 'بني' : 'Brown';
+                case SkinColor.dark:
+                  return isArabic ? 'داكن' : 'Dark';
+                case SkinColor.noPreference:
+                  return '';
+              }
+            },
+            onChanged: (selected) {
+              setState(() => selectedSkinColors = selected);
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // البنية الجسدية - Multi-select Checkbox
+          _buildMultiSelectDropdown(
+            label: isArabic ? 'البنية الجسدية' : 'Body Type',
+            items: BodyType.values.where((b) => b != BodyType.noPreference).toList(),
+            selectedItems: selectedBodyTypes,
+            itemLabel: (type) {
+              switch (type) {
+                case BodyType.slim:
+                  return isArabic ? 'نحيف' : 'Slim';
+                case BodyType.average:
+                  return isArabic ? 'متوسط' : 'Average';
+                case BodyType.heavyset:
+                  return isArabic ? 'ممتلئ' : 'Heavyset';
+                case BodyType.athletic:
+                  return isArabic ? 'رياضي' : 'Athletic';
+                case BodyType.noPreference:
+                  return '';
+              }
+            },
+            onChanged: (selected) {
+              setState(() => selectedBodyTypes = selected);
+            },
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  // تحديد خيارات الحالة الاجتماعية حسب جنس المستخدم
+  List<MaritalStatus> _getMaritalStatusOptions() {
+    if (userGender == Gender.male) {
+      // إخفاء "متزوج" للذكور
+      return MaritalStatus.values.where((status) => status != MaritalStatus.married).toList();
+    }
+    return MaritalStatus.values;
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Colors.blue,
+      ),
+    );
+  }
+
+  Widget _buildMultiSelectDropdown<T>({
+    required String label,
+    required List<T> items,
+    required List<T> selectedItems,
+    required String Function(T) itemLabel,
+    required Function(List<T>) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          constraints: const BoxConstraints(maxHeight: 200),
+          child: ListView(
+            shrinkWrap: true,
+            children: items.map((item) {
+              final isSelected = selectedItems.contains(item);
+              return CheckboxListTile(
+                title: Text(itemLabel(item)),
+                value: isSelected,
+                onChanged: (value) {
+                  List<T> newSelected = List.from(selectedItems);
+                  if (value == true) {
+                    newSelected.add(item);
+                  } else {
+                    newSelected.remove(item);
+                  }
+                  onChanged(newSelected);
+                },
+                dense: true,
+                controlAffinity: ListTileControlAffinity.leading,
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}

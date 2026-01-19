@@ -1,0 +1,194 @@
+// Social Media OTP Service
+import 'package:dio/dio.dart';
+import 'dart:developer' as developer;
+import 'package:fluttertoast/fluttertoast.dart';
+import 'social_media_config.dart';
+
+class SocialMediaOTPService {
+  final Dio _dio = Dio();
+  
+  // Send OTP via Telegram Bot
+  Future<bool> sendTelegramOTP(String phoneNumber, String otp) async {
+    try {
+      if (SocialMediaConfig.telegramBotToken == 'YOUR_TELEGRAM_BOT_TOKEN_HERE') {
+        developer.log('Telegram Bot Token not configured', name: 'SocialMediaOTP');
+        Fluttertoast.showToast(
+          msg: "TEST MODE ✈️ - Your Telegram OTP: $otp\n\nTo send real messages, configure Telegram Bot Token",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+        );
+        return true;
+      }
+      
+      // Extract Telegram user ID from phone number or username
+      // In production, you'll need to map phone numbers to Telegram chat IDs
+      // For now, showing instructions
+      
+      final message = '''
+🔐 ZAWADJ Verification Code
+
+Your OTP code is: *$otp*
+
+This code will expire in 5 minutes.
+Do not share this code with anyone.
+
+Phone: $phoneNumber
+''';
+      
+      // Note: You need the chat_id of the user to send messages
+      // Users must first start a conversation with your bot
+      developer.log('Telegram message prepared: $message', name: 'SocialMediaOTP');
+      
+      Fluttertoast.showToast(
+        msg: "⚠️ Telegram: Users must start chat with your bot first\n\nOTP: $otp (test mode)",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+      );
+      
+      return true;
+    } catch (e) {
+      developer.log('Telegram send error: $e', name: 'SocialMediaOTP');
+      return false;
+    }
+  }
+  
+  // Send OTP via Messenger (Facebook)
+  Future<bool> sendMessengerOTP(String phoneNumber, String otp) async {
+    try {
+      if (SocialMediaConfig.messengerPageAccessToken == 'YOUR_MESSENGER_PAGE_ACCESS_TOKEN') {
+        developer.log('Messenger not configured', name: 'SocialMediaOTP');
+        Fluttertoast.showToast(
+          msg: "TEST MODE 💬 - Your Messenger OTP: $otp\n\nConfigure Facebook Page Access Token for real messages",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+        );
+        return true;
+      }
+      
+      // Messenger Send API
+      // https://developers.facebook.com/docs/messenger-platform/send-messages
+      developer.log('Messenger OTP: $otp', name: 'SocialMediaOTP');
+      
+      Fluttertoast.showToast(
+        msg: "💬 Messenger OTP: $otp (test mode)",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+      );
+      
+      return true;
+    } catch (e) {
+      developer.log('Messenger send error: $e', name: 'SocialMediaOTP');
+      return false;
+    }
+  }
+  
+  // Send OTP via Viber
+  Future<bool> sendViberOTP(String phoneNumber, String otp) async {
+    try {
+      if (SocialMediaConfig.viberAuthToken == 'YOUR_VIBER_AUTH_TOKEN') {
+        developer.log('Viber not configured', name: 'SocialMediaOTP');
+        Fluttertoast.showToast(
+          msg: "TEST MODE 📞 - Your Viber OTP: $otp\n\nConfigure Viber Auth Token for real messages",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+        );
+        return true;
+      }
+      
+      // Viber REST API
+      // https://developers.viber.com/docs/api/rest-bot-api/
+      final url = 'https://chatapi.viber.com/pa/send_message';
+      
+      final response = await _dio.post(
+        url,
+        options: Options(
+          headers: {
+            'X-Viber-Auth-Token': SocialMediaConfig.viberAuthToken,
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: {
+          'receiver': phoneNumber,
+          'type': 'text',
+          'text': '🔐 ZAWADJ Verification\n\nYour OTP: $otp\n\nExpires in 5 minutes.',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        Fluttertoast.showToast(
+          msg: "OTP sent via Viber!",
+          toastLength: Toast.LENGTH_LONG,
+        );
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      developer.log('Viber send error: $e', name: 'SocialMediaOTP');
+      Fluttertoast.showToast(
+        msg: "📞 Viber OTP: $otp (error - test mode)",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+      );
+      return true;
+    }
+  }
+  
+  // Send OTP via Instagram Direct Message
+  Future<bool> sendInstagramOTP(String phoneNumber, String otp) async {
+    try {
+      if (SocialMediaConfig.instagramAccessToken == 'YOUR_INSTAGRAM_ACCESS_TOKEN') {
+        developer.log('Instagram not configured', name: 'SocialMediaOTP');
+        Fluttertoast.showToast(
+          msg: "TEST MODE 📷 - Your Instagram OTP: $otp\n\nConfigure Instagram Access Token for real messages",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+        );
+        return true;
+      }
+      
+      // Instagram Graph API
+      // https://developers.facebook.com/docs/instagram-api
+      developer.log('Instagram OTP: $otp', name: 'SocialMediaOTP');
+      
+      Fluttertoast.showToast(
+        msg: "📷 Instagram OTP: $otp (test mode)",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+      );
+      
+      return true;
+    } catch (e) {
+      developer.log('Instagram send error: $e', name: 'SocialMediaOTP');
+      return false;
+    }
+  }
+  
+  // Open platform app for user to connect
+  Future<void> openPlatformApp(String platform, String phoneNumber) async {
+    try {
+      String url = '';
+      switch (platform) {
+        case 'telegram':
+          url = 'https://t.me/your_bot_username'; // Replace with your bot username
+          break;
+        case 'messenger':
+          url = 'https://m.me/your_page_id'; // Replace with your page ID
+          break;
+        case 'viber':
+          url = 'viber://pa?chatURI=your_bot_uri'; // Replace with your bot URI
+          break;
+        case 'instagram':
+          url = 'https://ig.me/m/your_username'; // Replace with your username
+          break;
+      }
+      
+      if (url.isNotEmpty) {
+        developer.log('Opening $platform: $url', name: 'SocialMediaOTP');
+        // url_launcher will be used here in production
+      }
+    } catch (e) {
+      developer.log('Error opening platform: $e', name: 'SocialMediaOTP');
+    }
+  }
+}

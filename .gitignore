@@ -1,0 +1,89 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+android/. gradle/
+android/app/build/
+android/build/
+
+# iOS Build artifacts
+ios/build/
+ios/Pods/
+ios/. symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# ============================================
+# 🔒 SECURITY: Sensitive Files (DO NOT COMMIT)
+# ============================================
+
+# Firebase Configuration Files
+google-services.json
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+ios/firebase_app_id_file.json
+lib/firebase_options.dart
+
+# Android Signing Keys
+*. jks
+*.keystore
+android/key.properties
+android/app/upload-keystore.jks
+android/app/release-keystore.jks
+
+# Environment Variables & Secrets
+.env
+.env. local
+.env.production
+. env.development
+**/secrets.dart
+**/api_keys.dart
+**/config/secrets.json
+
+# Social Media API Keys
+android/app/src/main/res/values/strings.xml
+
+# Generated Code
+*. g.dart
+*.freezed.dart
+*.gr.dart
