@@ -715,6 +715,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
   }
 
   Future<void> _handleGoogleSignIn() async {
+    final isArabic = language == 'ar';
     setState(() => _isLoading = true);
 
     try {
@@ -729,15 +730,42 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
           Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
-        _showMessage(result['message'], Colors.red);
+        // Provide more helpful error messages
+        String errorMessage = result['message'];
+        
+        if (errorMessage.contains('sign_in_failed') || errorMessage.contains('PlatformException')) {
+          errorMessage = isArabic
+              ? 'خطأ في تسجيل الدخول عبر Google. يرجى التأكد من:\n'
+                '1. تفعيل Google Sign-In في Firebase Console\n'
+                '2. إضافة SHA-1 و SHA-256 في إعدادات التطبيق\n'
+                '3. تحديث ملف google-services.json'
+              : 'Google Sign-In error. Please ensure:\n'
+                '1. Google Sign-In is enabled in Firebase Console\n'
+                '2. SHA-1 and SHA-256 fingerprints are added\n'
+                '3. google-services.json is up to date';
+        } else if (errorMessage.contains('Sign in aborted')) {
+          errorMessage = isArabic
+              ? 'تم إلغاء تسجيل الدخول'
+              : 'Sign in cancelled';
+        }
+        
+        _showMessage(errorMessage, Colors.red);
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      _showMessage('Error: ${e.toString()}', Colors.red);
+      
+      String errorMessage = isArabic
+          ? 'خطأ غير متوقع: ${e.toString()}\n'
+            'الرجاء التحقق من إعدادات Firebase'
+          : 'Unexpected error: ${e.toString()}\n'
+            'Please check Firebase configuration';
+      
+      _showMessage(errorMessage, Colors.red);
     }
   }
 
   Future<void> _handleFacebookSignIn() async {
+    final isArabic = language == 'ar';
     setState(() => _isLoading = true);
 
     try {
@@ -752,11 +780,45 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
           Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
-        _showMessage(result['message'], Colors.red);
+        // Provide more helpful error messages
+        String errorMessage = result['message'];
+        
+        if (errorMessage.contains('MissingPluginException')) {
+          errorMessage = isArabic
+              ? 'خطأ: إضافة Facebook غير مفعلة بشكل صحيح.\n'
+                'يرجى التأكد من:\n'
+                '1. تثبيت flutter_facebook_auth بشكل صحيح\n'
+                '2. إضافة Facebook App ID في AndroidManifest.xml\n'
+                '3. تفعيل Facebook Login في Firebase Console'
+              : 'Error: Facebook plugin not properly configured.\n'
+                'Please ensure:\n'
+                '1. flutter_facebook_auth is properly installed\n'
+                '2. Facebook App ID is added to AndroidManifest.xml\n'
+                '3. Facebook Login is enabled in Firebase Console';
+        } else if (errorMessage.contains('CANCELLED') || errorMessage.contains('cancelled')) {
+          errorMessage = isArabic
+              ? 'تم إلغاء تسجيل الدخول'
+              : 'Sign in cancelled';
+        }
+        
+        _showMessage(errorMessage, Colors.red);
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      _showMessage('Error: ${e.toString()}', Colors.red);
+      
+      String errorMessage = e.toString();
+      
+      if (errorMessage.contains('MissingPluginException')) {
+        errorMessage = isArabic
+            ? 'Facebook Login غير مفعل. يرجى اتباع تعليمات الإعداد في FIREBASE_SETUP.md'
+            : 'Facebook Login not configured. Please follow setup instructions in FIREBASE_SETUP.md';
+      } else {
+        errorMessage = isArabic
+            ? 'خطأ غير متوقع: ${e.toString()}'
+            : 'Unexpected error: ${e.toString()}';
+      }
+      
+      _showMessage(errorMessage, Colors.red);
     }
   }
 

@@ -62,7 +62,10 @@ google-services.json
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 ios/firebase_app_id_file.json
-lib/firebase_options.dart
+# Note: lib/firebase_options.dart is a template file with placeholders
+# Real firebase_options.dart with actual keys should be generated using:
+# flutterfire configure --project=your-firebase-project-id
+# Developers should generate their own and not commit real keys
 
 # Android Signing Keys
 *. jks
