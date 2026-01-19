@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 import '../l10n/arabic_strings.dart';
 import '../l10n/english_strings.dart';
@@ -18,6 +21,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   bool photoHidden = true;
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
+  bool _isUploading = false;
+  double _uploadProgress = 0.0;
 
   @override
   void initState() {
@@ -130,10 +135,29 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                
+                // Progress indicator
+                if (_isUploading) ...[
+                  LinearProgressIndicator(
+                    value: _uploadProgress,
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${(_uploadProgress * 100).toStringAsFixed(0)}%',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                
                 CustomButton(
-                  label: isArabic ? ArabicStrings.uploadPhoto : EnglishStrings.uploadPhoto,
-                  onPressed: _selectedImage != null ? () { _uploadPhoto(); } : null,
-                  backgroundColor: _selectedImage != null ? Colors.green : Colors.grey,
+                  label: _isUploading 
+                      ? (language == 'ar' ? 'جاري الرفع...' : 'Uploading...')
+                      : (language == 'ar' ? ArabicStrings.uploadPhoto : EnglishStrings.uploadPhoto),
+                  onPressed: _selectedImage != null && !_isUploading ? () { _uploadPhoto(); } : null,
+                  backgroundColor: _selectedImage != null && !_isUploading ? Colors.green : Colors.grey,
                 ),
               ],
             )
@@ -298,14 +322,57 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   Future<void> _uploadPhoto() async {
     if (_selectedImage == null) return;
 
+    setState(() {
+      _isUploading = true;
+      _uploadProgress = 0.0;
+    });
+
     try {
-      // هنا يجب إضافة رفع الصورة إلى Firebase Storage
-      // في الوقت الحالي سيتم حفظ المسار محلياً
-      setState(() {
-        photoUploaded = true;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Create a reference to Firebase Storage
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('user_photos')
+          .child(user.uid)
+          .child('profile_${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      // Upload file with progress tracking
+      final uploadTask = storageRef.putFile(_selectedImage!);
+
+      // Listen to upload progress
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        setState(() {
+          _uploadProgress = snapshot.bytesTransferred / snapshot.totalBytes;
+        });
       });
 
+      // Wait for upload to complete
+      await uploadTask;
+
+      // Get download URL
+      final downloadUrl = await storageRef.getDownloadURL();
+
+      // Save photo URL to Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
+        'photoURL': downloadUrl,
+        'photoHidden': photoHidden,
+        'photoStatus': 'pending_review',
+        'photoUpdatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
       if (mounted) {
+        setState(() {
+          photoUploaded = true;
+          _isUploading = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -313,13 +380,19 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                   ? 'تم رفع الصورة بنجاح وهي قيد المراجعة'
                   : 'Photo uploaded successfully and is under review',
             ),
+            backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isUploading = false);
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في رفع الصورة / Upload error: ${e.toString()}')),
+          SnackBar(
+            content: Text('خطأ في رفع الصورة / Upload error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

@@ -25,10 +25,19 @@ import 'screens/forgot_password_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Initialize Firebase with error handling
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('✅ Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('❌ Firebase initialization error: $e');
+    debugPrint('⚠️  Please configure Firebase using: flutterfire configure');
+    debugPrint('⚠️  See FIREBASE_SETUP.md for detailed instructions');
+    // Continue with app initialization even if Firebase fails
+    // This allows developers to see the UI and get setup instructions
+  }
   
   // Initialize local storage
   final localStorageService = LocalStorageService();

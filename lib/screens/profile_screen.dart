@@ -26,12 +26,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int? selectedHeight;
   SkinColor? selectedSkinColor;
   BodyType? selectedBodyType;
+  EducationLevel? selectedEducationLevel;
+  EmploymentStatus? selectedEmploymentStatus;
+  HousingType? selectedHousingType;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     language = 'ar';
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        if (data != null) {
+          setState(() {
+            firstNameController.text = data['firstName'] ?? '';
+            selectedAge = data['age'];
+            selectedGender = data['gender'] != null 
+                ? Gender.values.firstWhere((e) => e.name == data['gender']) 
+                : null;
+            selectedCountry = data['country'];
+            selectedState = data['state'];
+            selectedMaritalStatus = data['maritalStatus'] != null
+                ? MaritalStatus.values.firstWhere((e) => e.name == data['maritalStatus'])
+                : null;
+            selectedHeight = data['height'];
+            selectedSkinColor = data['skinColor'] != null
+                ? SkinColor.values.firstWhere((e) => e.name == data['skinColor'])
+                : null;
+            selectedBodyType = data['bodyType'] != null
+                ? BodyType.values.firstWhere((e) => e.name == data['bodyType'])
+                : null;
+            selectedEducationLevel = data['educationLevel'] != null
+                ? EducationLevel.values.firstWhere((e) => e.name == data['educationLevel'])
+                : null;
+            selectedEmploymentStatus = data['employmentStatus'] != null
+                ? EmploymentStatus.values.firstWhere((e) => e.name == data['employmentStatus'])
+                : null;
+            selectedHousingType = data['housingType'] != null
+                ? HousingType.values.firstWhere((e) => e.name == data['housingType'])
+                : null;
+          });
+        }
+      }
+    } catch (e) {
+      // Silently fail - profile might not exist yet
+    }
   }
 
   @override
@@ -138,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Education Level
           CustomDropdown<EducationLevel>(
             label: isArabic ? ArabicStrings.educationLevel : EnglishStrings.educationLevel,
-            value: null,
+            value: selectedEducationLevel,
             items: EducationLevel.values,
             itemLabel: (level) {
               switch (level) {
@@ -152,14 +204,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   return isArabic ? ArabicStrings.university : EnglishStrings.university;
               }
             },
-            onChanged: (value) {},
+            onChanged: (value) => setState(() => selectedEducationLevel = value),
           ),
           const SizedBox(height: 15),
 
           // Employment Status
           CustomDropdown<EmploymentStatus>(
             label: isArabic ? ArabicStrings.employment : EnglishStrings.employment,
-            value: null,
+            value: selectedEmploymentStatus,
             items: EmploymentStatus.values,
             itemLabel: (status) {
               switch (status) {
@@ -177,14 +229,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   return isArabic ? ArabicStrings.noJob : EnglishStrings.noJob;
               }
             },
-            onChanged: (value) {},
+            onChanged: (value) => setState(() => selectedEmploymentStatus = value),
           ),
           const SizedBox(height: 15),
 
           // Housing Type
           CustomDropdown<HousingType>(
             label: isArabic ? ArabicStrings.housing : EnglishStrings.housing,
-            value: null,
+            value: selectedHousingType,
             items: HousingType.values,
             itemLabel: (type) {
               switch (type) {
@@ -196,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   return isArabic ? ArabicStrings.familyShared : EnglishStrings.familyShared;
               }
             },
-            onChanged: (value) {},
+            onChanged: (value) => setState(() => selectedHousingType = value),
           ),
           const SizedBox(height: 30),
 
@@ -314,6 +366,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'height': selectedHeight,
         'skinColor': selectedSkinColor?.name,
         'bodyType': selectedBodyType?.name,
+        'educationLevel': selectedEducationLevel?.name,
+        'employmentStatus': selectedEmploymentStatus?.name,
+        'housingType': selectedHousingType?.name,
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
@@ -324,12 +379,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ البيانات بنجاح / Profile saved successfully')),
+        const SnackBar(
+          content: Text('تم حفظ البيانات بنجاح / Profile saved successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في الحفظ / Save error: ${e.toString()}')),
+        SnackBar(
+          content: Text('خطأ في الحفظ / Save error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../l10n/arabic_strings.dart';
 import '../l10n/english_strings.dart';
 import '../widgets/common_widgets.dart';
@@ -31,12 +33,159 @@ class _PartnerCriteriaScreenState extends State<PartnerCriteriaScreen> {
   List<int> selectedHeightRange = [150, 180];
   AppearanceFilter? selectedAppearance;
   Gender? userGender;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     language = 'ar';
+    _loadPartnerCriteria();
     // يمكن الحصول على جنس المستخدم من الـ Provider أو من الملف الشخصي المحفوظ
+  }
+
+  Future<void> _loadPartnerCriteria() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // Load user gender
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        if (userData?['gender'] != null) {
+          userGender = Gender.values.firstWhere((e) => e.name == userData!['gender']);
+        }
+      }
+
+      // Load partner criteria
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('preferences')
+          .doc('partner_criteria')
+          .get();
+
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        if (data != null) {
+          setState(() {
+            selectedAgeRange = List<int>.from(data['ageRange'] ?? [18, 35]);
+            selectedCountries = List<String>.from(data['countries'] ?? []);
+            selectedStates = List<String>.from(data['states'] ?? []);
+            
+            selectedMaritalStatuses = (data['maritalStatuses'] as List<dynamic>?)
+                ?.map((e) => MaritalStatus.values.firstWhere((ms) => ms.name == e))
+                .toList() ?? [];
+            
+            selectedEducationLevels = (data['educationLevels'] as List<dynamic>?)
+                ?.map((e) => EducationLevel.values.firstWhere((el) => el.name == e))
+                .toList() ?? [];
+            
+            selectedSkinColors = (data['skinColors'] as List<dynamic>?)
+                ?.map((e) => SkinColor.values.firstWhere((sc) => sc.name == e))
+                .toList() ?? [];
+            
+            selectedBodyTypes = (data['bodyTypes'] as List<dynamic>?)
+                ?.map((e) => BodyType.values.firstWhere((bt) => bt.name == e))
+                .toList() ?? [];
+            
+            selectedHeightRange = List<int>.from(data['heightRange'] ?? [150, 180]);
+            
+            if (data['childrenPreference'] != null) {
+              selectedChildrenPreference = ChildrenPreference.values
+                  .firstWhere((e) => e.name == data['childrenPreference']);
+            }
+            
+            if (data['alcoholDrugs'] != null) {
+              selectedAlcoholDrugs = HabitStatus.values
+                  .firstWhere((e) => e.name == data['alcoholDrugs']);
+            }
+            
+            if (data['smoking'] != null) {
+              selectedSmoking = HabitStatus.values
+                  .firstWhere((e) => e.name == data['smoking']);
+            }
+            
+            if (data['prayerStatus'] != null) {
+              selectedPrayerStatus = PrayerStatus.values
+                  .firstWhere((e) => e.name == data['prayerStatus']);
+            }
+            
+            if (data['glassesPreference'] != null) {
+              selectedGlassesPreference = GlassesPreference.values
+                  .firstWhere((e) => e.name == data['glassesPreference']);
+            }
+            
+            if (data['appearance'] != null) {
+              selectedAppearance = AppearanceFilter.values
+                  .firstWhere((e) => e.name == data['appearance']);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      // Silently fail - criteria might not exist yet
+    }
+  }
+
+  Future<void> _savePartnerCriteria() async {
+    setState(() => _isSaving = true);
+    
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final criteriaData = {
+        'ageRange': selectedAgeRange,
+        'countries': selectedCountries,
+        'states': selectedStates,
+        'maritalStatuses': selectedMaritalStatuses.map((e) => e.name).toList(),
+        'educationLevels': selectedEducationLevels.map((e) => e.name).toList(),
+        'skinColors': selectedSkinColors.map((e) => e.name).toList(),
+        'bodyTypes': selectedBodyTypes.map((e) => e.name).toList(),
+        'heightRange': selectedHeightRange,
+        'childrenPreference': selectedChildrenPreference?.name,
+        'alcoholDrugs': selectedAlcoholDrugs?.name,
+        'smoking': selectedSmoking?.name,
+        'prayerStatus': selectedPrayerStatus?.name,
+        'glassesPreference': selectedGlassesPreference?.name,
+        'appearance': selectedAppearance?.name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('preferences')
+          .doc('partner_criteria')
+          .set(criteriaData, SetOptions(merge: true));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم حفظ معايير الشريك بنجاح / Partner criteria saved successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في الحفظ / Save error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -48,7 +197,9 @@ class _PartnerCriteriaScreenState extends State<PartnerCriteriaScreen> {
         title: isArabic ? ArabicStrings.partnerCriteria : EnglishStrings.partnerCriteria,
         onBackPressed: () => Navigator.pop(context),
         showForwardButton: true,
-        onForwardPressed: () {
+        onForwardPressed: _isSaving ? null : () async {
+          await _savePartnerCriteria();
+          if (!context.mounted) return;
           Navigator.pushNamed(context, '/terms');
         },
       ),
