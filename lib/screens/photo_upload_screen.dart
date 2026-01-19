@@ -347,11 +347,17 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       }
 
       // Create a reference to Firebase Storage
+      // Extract file extension from the selected image
+      final fileName = _selectedImage!.path.split('/').last;
+      final fileExtension = fileName.contains('.') 
+          ? fileName.split('.').last 
+          : 'jpg';
+      
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('user_photos')
           .child(user.uid)
-          .child('profile_${DateTime.now().millisecondsSinceEpoch}.jpg');
+          .child('profile_${DateTime.now().millisecondsSinceEpoch}.$fileExtension');
 
       // Upload file with progress tracking
       final uploadTask = storageRef.putFile(_selectedImage!);

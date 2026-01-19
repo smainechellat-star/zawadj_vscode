@@ -17,6 +17,26 @@ class SocialAuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   
+  /// Helper method to build user-friendly error messages from Firebase Auth exceptions
+  String _buildFirebaseAuthErrorMessage(FirebaseAuthException e, String provider) {
+    switch (e.code) {
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with a different sign-in method';
+      case 'invalid-credential':
+        return 'Invalid credentials. Please check your Firebase configuration';
+      case 'operation-not-allowed':
+        return '$provider Sign-In is not enabled in Firebase Console';
+      case 'user-disabled':
+        return 'This account has been disabled';
+      case 'user-not-found':
+        return 'No account found with these credentials';
+      case 'wrong-password':
+        return 'Incorrect password';
+      default:
+        return 'Authentication failed: ${e.message}';
+    }
+  }
+  
   /// Sign in with Google
   Future<Map<String, dynamic>> signInWithGoogle() async {
     try {
@@ -63,18 +83,12 @@ class SocialAuthService {
         'displayName': user.displayName,
       };
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase Auth errors
-      String message = 'Authentication failed: ${e.message}';
-      if (e.code == 'account-exists-with-different-credential') {
-        message = 'An account already exists with a different sign-in method';
-      } else if (e.code == 'invalid-credential') {
-        message = 'Invalid credentials. Please check your Firebase configuration';
-      } else if (e.code == 'operation-not-allowed') {
-        message = 'Google Sign-In is not enabled in Firebase Console';
-      } else if (e.code == 'user-disabled') {
-        message = 'This account has been disabled';
-      }
-      return {'success': false, 'message': message, 'code': e.code};
+      // Handle specific Firebase Auth errors using helper method
+      return {
+        'success': false, 
+        'message': _buildFirebaseAuthErrorMessage(e, 'Google'),
+        'code': e.code
+      };
     } catch (e) {
       // Handle other errors (network, plugin, etc.)
       return {'success': false, 'message': e.toString()};
@@ -133,18 +147,12 @@ class SocialAuthService {
         'displayName': userData['name'],
       };
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase Auth errors
-      String message = 'Authentication failed: ${e.message}';
-      if (e.code == 'account-exists-with-different-credential') {
-        message = 'An account already exists with a different sign-in method';
-      } else if (e.code == 'invalid-credential') {
-        message = 'Invalid credentials. Please check your Firebase configuration';
-      } else if (e.code == 'operation-not-allowed') {
-        message = 'Facebook Sign-In is not enabled in Firebase Console';
-      } else if (e.code == 'user-disabled') {
-        message = 'This account has been disabled';
-      }
-      return {'success': false, 'message': message, 'code': e.code};
+      // Handle specific Firebase Auth errors using helper method
+      return {
+        'success': false, 
+        'message': _buildFirebaseAuthErrorMessage(e, 'Facebook'),
+        'code': e.code
+      };
     } catch (e) {
       // Handle other errors (network, plugin, etc.)
       return {'success': false, 'message': e.toString()};

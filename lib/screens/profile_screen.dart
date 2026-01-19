@@ -54,30 +54,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             firstNameController.text = data['firstName'] ?? '';
             selectedAge = data['age'];
-            selectedGender = data['gender'] != null 
-                ? Gender.values.firstWhere((e) => e.name == data['gender']) 
-                : null;
+            
+            // Safely parse gender enum
+            if (data['gender'] != null) {
+              try {
+                selectedGender = Gender.values.firstWhere(
+                  (e) => e.name == data['gender'],
+                  orElse: () => Gender.male,
+                );
+              } catch (e) {
+                selectedGender = null;
+              }
+            }
+            
             selectedCountry = data['country'];
             selectedState = data['state'];
-            selectedMaritalStatus = data['maritalStatus'] != null
-                ? MaritalStatus.values.firstWhere((e) => e.name == data['maritalStatus'])
-                : null;
+            
+            // Safely parse marital status enum
+            if (data['maritalStatus'] != null) {
+              try {
+                selectedMaritalStatus = MaritalStatus.values.firstWhere(
+                  (e) => e.name == data['maritalStatus'],
+                  orElse: () => MaritalStatus.single,
+                );
+              } catch (e) {
+                selectedMaritalStatus = null;
+              }
+            }
+            
             selectedHeight = data['height'];
-            selectedSkinColor = data['skinColor'] != null
-                ? SkinColor.values.firstWhere((e) => e.name == data['skinColor'])
-                : null;
-            selectedBodyType = data['bodyType'] != null
-                ? BodyType.values.firstWhere((e) => e.name == data['bodyType'])
-                : null;
-            selectedEducationLevel = data['educationLevel'] != null
-                ? EducationLevel.values.firstWhere((e) => e.name == data['educationLevel'])
-                : null;
-            selectedEmploymentStatus = data['employmentStatus'] != null
-                ? EmploymentStatus.values.firstWhere((e) => e.name == data['employmentStatus'])
-                : null;
-            selectedHousingType = data['housingType'] != null
-                ? HousingType.values.firstWhere((e) => e.name == data['housingType'])
-                : null;
+            
+            // Safely parse skin color enum
+            if (data['skinColor'] != null) {
+              try {
+                selectedSkinColor = SkinColor.values.firstWhere(
+                  (e) => e.name == data['skinColor'],
+                  orElse: () => SkinColor.fair,
+                );
+              } catch (e) {
+                selectedSkinColor = null;
+              }
+            }
+            
+            // Safely parse body type enum
+            if (data['bodyType'] != null) {
+              try {
+                selectedBodyType = BodyType.values.firstWhere(
+                  (e) => e.name == data['bodyType'],
+                  orElse: () => BodyType.average,
+                );
+              } catch (e) {
+                selectedBodyType = null;
+              }
+            }
+            
+            // Safely parse education level enum
+            if (data['educationLevel'] != null) {
+              try {
+                selectedEducationLevel = EducationLevel.values.firstWhere(
+                  (e) => e.name == data['educationLevel'],
+                  orElse: () => EducationLevel.secondary,
+                );
+              } catch (e) {
+                selectedEducationLevel = null;
+              }
+            }
+            
+            // Safely parse employment status enum
+            if (data['employmentStatus'] != null) {
+              try {
+                selectedEmploymentStatus = EmploymentStatus.values.firstWhere(
+                  (e) => e.name == data['employmentStatus'],
+                  orElse: () => EmploymentStatus.unemployed,
+                );
+              } catch (e) {
+                selectedEmploymentStatus = null;
+              }
+            }
+            
+            // Safely parse housing type enum
+            if (data['housingType'] != null) {
+              try {
+                selectedHousingType = HousingType.values.firstWhere(
+                  (e) => e.name == data['housingType'],
+                  orElse: () => HousingType.withParentsOnly,
+                );
+              } catch (e) {
+                selectedHousingType = null;
+              }
+            }
           });
         }
       }

@@ -30,7 +30,18 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    debugPrint('✅ Firebase initialized successfully');
+    
+    // Check if using placeholder configuration (development warning)
+    if (kDebugMode) {
+      final options = DefaultFirebaseOptions.currentPlatform;
+      if (options.apiKey.contains('YOUR_') || options.projectId == 'your-project-id') {
+        debugPrint('⚠️  WARNING: Using placeholder Firebase configuration!');
+        debugPrint('⚠️  Run: flutterfire configure --project=your-firebase-project-id');
+        debugPrint('⚠️  See FIREBASE_SETUP.md for detailed instructions');
+      } else {
+        debugPrint('✅ Firebase initialized successfully');
+      }
+    }
   } catch (e) {
     debugPrint('❌ Firebase initialization error: $e');
     debugPrint('⚠️  Please configure Firebase using: flutterfire configure');

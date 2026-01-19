@@ -57,7 +57,14 @@ class _PartnerCriteriaScreenState extends State<PartnerCriteriaScreen> {
       if (userDoc.exists) {
         final userData = userDoc.data();
         if (userData?['gender'] != null) {
-          userGender = Gender.values.firstWhere((e) => e.name == userData!['gender']);
+          try {
+            userGender = Gender.values.firstWhere(
+              (e) => e.name == userData!['gender'],
+              orElse: () => Gender.male,
+            );
+          } catch (e) {
+            userGender = null;
+          }
         }
       }
 
@@ -77,52 +84,113 @@ class _PartnerCriteriaScreenState extends State<PartnerCriteriaScreen> {
             selectedCountries = List<String>.from(data['countries'] ?? []);
             selectedStates = List<String>.from(data['states'] ?? []);
             
+            // Safely parse marital statuses
             selectedMaritalStatuses = (data['maritalStatuses'] as List<dynamic>?)
-                ?.map((e) => MaritalStatus.values.firstWhere((ms) => ms.name == e))
+                ?.map((e) {
+                  try {
+                    return MaritalStatus.values.firstWhere((ms) => ms.name == e);
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .where((e) => e != null)
+                .cast<MaritalStatus>()
                 .toList() ?? [];
             
+            // Safely parse education levels
             selectedEducationLevels = (data['educationLevels'] as List<dynamic>?)
-                ?.map((e) => EducationLevel.values.firstWhere((el) => el.name == e))
+                ?.map((e) {
+                  try {
+                    return EducationLevel.values.firstWhere((el) => el.name == e);
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .where((e) => e != null)
+                .cast<EducationLevel>()
                 .toList() ?? [];
             
+            // Safely parse skin colors
             selectedSkinColors = (data['skinColors'] as List<dynamic>?)
-                ?.map((e) => SkinColor.values.firstWhere((sc) => sc.name == e))
+                ?.map((e) {
+                  try {
+                    return SkinColor.values.firstWhere((sc) => sc.name == e);
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .where((e) => e != null)
+                .cast<SkinColor>()
                 .toList() ?? [];
             
+            // Safely parse body types
             selectedBodyTypes = (data['bodyTypes'] as List<dynamic>?)
-                ?.map((e) => BodyType.values.firstWhere((bt) => bt.name == e))
+                ?.map((e) {
+                  try {
+                    return BodyType.values.firstWhere((bt) => bt.name == e);
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .where((e) => e != null)
+                .cast<BodyType>()
                 .toList() ?? [];
             
             selectedHeightRange = List<int>.from(data['heightRange'] ?? [150, 180]);
             
+            // Safely parse single enum values
             if (data['childrenPreference'] != null) {
-              selectedChildrenPreference = ChildrenPreference.values
-                  .firstWhere((e) => e.name == data['childrenPreference']);
+              try {
+                selectedChildrenPreference = ChildrenPreference.values
+                    .firstWhere((e) => e.name == data['childrenPreference']);
+              } catch (_) {
+                selectedChildrenPreference = null;
+              }
             }
             
             if (data['alcoholDrugs'] != null) {
-              selectedAlcoholDrugs = HabitStatus.values
-                  .firstWhere((e) => e.name == data['alcoholDrugs']);
+              try {
+                selectedAlcoholDrugs = HabitStatus.values
+                    .firstWhere((e) => e.name == data['alcoholDrugs']);
+              } catch (_) {
+                selectedAlcoholDrugs = null;
+              }
             }
             
             if (data['smoking'] != null) {
-              selectedSmoking = HabitStatus.values
-                  .firstWhere((e) => e.name == data['smoking']);
+              try {
+                selectedSmoking = HabitStatus.values
+                    .firstWhere((e) => e.name == data['smoking']);
+              } catch (_) {
+                selectedSmoking = null;
+              }
             }
             
             if (data['prayerStatus'] != null) {
-              selectedPrayerStatus = PrayerStatus.values
-                  .firstWhere((e) => e.name == data['prayerStatus']);
+              try {
+                selectedPrayerStatus = PrayerStatus.values
+                    .firstWhere((e) => e.name == data['prayerStatus']);
+              } catch (_) {
+                selectedPrayerStatus = null;
+              }
             }
             
             if (data['glassesPreference'] != null) {
-              selectedGlassesPreference = GlassesPreference.values
-                  .firstWhere((e) => e.name == data['glassesPreference']);
+              try {
+                selectedGlassesPreference = GlassesPreference.values
+                    .firstWhere((e) => e.name == data['glassesPreference']);
+              } catch (_) {
+                selectedGlassesPreference = null;
+              }
             }
             
             if (data['appearance'] != null) {
-              selectedAppearance = AppearanceFilter.values
-                  .firstWhere((e) => e.name == data['appearance']);
+              try {
+                selectedAppearance = AppearanceFilter.values
+                    .firstWhere((e) => e.name == data['appearance']);
+              } catch (_) {
+                selectedAppearance = null;
+              }
             }
           });
         }
