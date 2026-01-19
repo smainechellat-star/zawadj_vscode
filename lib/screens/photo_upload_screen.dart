@@ -237,8 +237,21 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                         label: photoHidden
                             ? isArabic ? ArabicStrings.showPhoto : EnglishStrings.showPhoto
                             : isArabic ? ArabicStrings.hidePhoto : EnglishStrings.hidePhoto,
-                        onPressed: () {
+                        onPressed: () async {
                           setState(() => photoHidden = !photoHidden);
+                          
+                          // Update visibility in Firestore
+                          try {
+                            final user = FirebaseAuth.instance.currentUser;
+                            if (user != null) {
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user.uid)
+                                  .update({'photoHidden': photoHidden});
+                            }
+                          } catch (e) {
+                            // Silently fail - not critical
+                          }
                         },
                         backgroundColor: photoHidden
                             ? Colors.blue

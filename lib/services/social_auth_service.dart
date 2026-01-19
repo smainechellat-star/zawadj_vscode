@@ -62,7 +62,21 @@ class SocialAuthService {
         'email': user.email,
         'displayName': user.displayName,
       };
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase Auth errors
+      String message = 'Authentication failed: ${e.message}';
+      if (e.code == 'account-exists-with-different-credential') {
+        message = 'An account already exists with a different sign-in method';
+      } else if (e.code == 'invalid-credential') {
+        message = 'Invalid credentials. Please check your Firebase configuration';
+      } else if (e.code == 'operation-not-allowed') {
+        message = 'Google Sign-In is not enabled in Firebase Console';
+      } else if (e.code == 'user-disabled') {
+        message = 'This account has been disabled';
+      }
+      return {'success': false, 'message': message, 'code': e.code};
     } catch (e) {
+      // Handle other errors (network, plugin, etc.)
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -76,10 +90,13 @@ class SocialAuthService {
       );
       
       if (result.status != LoginStatus.success) {
-        return {
-          'success': false,
-          'message': 'Facebook sign in failed: ${result.message}'
-        };
+        String message = 'Facebook sign in failed';
+        if (result.status == LoginStatus.cancelled) {
+          message = 'Sign in cancelled by user';
+        } else if (result.status == LoginStatus.failed) {
+          message = 'Sign in failed: ${result.message}';
+        }
+        return {'success': false, 'message': message};
       }
       
       // Create a credential from the access token
@@ -115,7 +132,21 @@ class SocialAuthService {
         'email': user.email,
         'displayName': userData['name'],
       };
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase Auth errors
+      String message = 'Authentication failed: ${e.message}';
+      if (e.code == 'account-exists-with-different-credential') {
+        message = 'An account already exists with a different sign-in method';
+      } else if (e.code == 'invalid-credential') {
+        message = 'Invalid credentials. Please check your Firebase configuration';
+      } else if (e.code == 'operation-not-allowed') {
+        message = 'Facebook Sign-In is not enabled in Firebase Console';
+      } else if (e.code == 'user-disabled') {
+        message = 'This account has been disabled';
+      }
+      return {'success': false, 'message': message, 'code': e.code};
     } catch (e) {
+      // Handle other errors (network, plugin, etc.)
       return {'success': false, 'message': e.toString()};
     }
   }
